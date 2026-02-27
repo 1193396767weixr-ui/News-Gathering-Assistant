@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTO 技术简报 | AI 情报站</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:#0a0e14; --surface:#0f1620; --card:#131c28; --border:#1e3048;
+  --accent:#00d4ff; --accent2:#39ff8f; --accent3:#ff5f3d; --accent4:#ffb700;
+  --text:#c8d8e8; --muted:#5a7a9a;
+  --font:'Microsoft YaHei','PingFang SC','Hiragino Sans GB',sans-serif;
+  --mono:'Courier New',Courier,monospace;
+}
+body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden;
+  background-image: radial-gradient(ellipse at 15% 0%,rgba(0,212,255,.07) 0%,transparent 50%),
+                    radial-gradient(ellipse at 85% 100%,rgba(57,255,143,.05) 0%,transparent 50%); }
+body::before { content:''; position:fixed; inset:0;
+  background-image: linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px),
+                    linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px);
+  background-size:44px 44px; pointer-events:none; z-index:0; }
+
+/* ── HEADER ── */
+header { position:sticky; top:0; z-index:100; border-bottom:1px solid var(--border);
+  background:rgba(10,14,20,.97); backdrop-filter:blur(12px); }
+.hdr-top { max-width:1080px; margin:0 auto; padding:24px 28px 20px;
+  display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.brand-eye { font-family:var(--mono); font-size:10px; letter-spacing:.28em; color:var(--accent);
+  margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+.brand-eye::before { content:''; display:inline-block; width:20px; height:1px;
+  background:var(--accent); box-shadow:0 0 6px var(--accent); }
+.brand-name { font-size:clamp(26px,4vw,42px); font-weight:900; line-height:1; letter-spacing:-.02em;
+  background:linear-gradient(125deg,#fff 20%,var(--accent) 70%,var(--accent2) 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.brand-sub { font-family:var(--mono); font-size:11px; color:var(--muted); margin-top:6px; }
+
+.hdr-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.btn { display:flex; align-items:center; gap:8px; padding:10px 20px; font-family:var(--mono);
+  font-size:12px; font-weight:600; cursor:pointer; transition:all .2s; white-space:nowrap;
+  border:1px solid; letter-spacing:.04em; background:transparent; }
+.btn-primary { border-color:var(--accent); color:var(--accent); }
+.btn-primary:hover { box-shadow:0 0 20px rgba(0,212,255,.25); background:rgba(0,212,255,.08); }
+.btn-primary:disabled { opacity:.35; cursor:not-allowed; box-shadow:none; }
+.btn-ghost { border-color:var(--border); color:var(--muted); }
+.btn-ghost:hover { border-color:var(--accent4); color:var(--accent4); }
+.pulse { width:8px; height:8px; border-radius:50%; background:var(--accent2);
+  box-shadow:0 0 8px var(--accent2); animation:pulse 1.4s ease-in-out infinite; }
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.25;transform:scale(.7)}}
+
+/* ticker */
+.ticker { background:var(--surface); border-top:1px solid var(--border); padding:7px 28px;
+  font-family:var(--mono); font-size:10px; color:var(--muted);
+  display:flex; align-items:center; gap:16px; overflow:hidden; }
+.ticker-lbl { color:var(--accent); border:1px solid var(--accent); padding:1px 6px;
+  letter-spacing:.15em; font-size:9px; flex-shrink:0; }
+.ticker-items { display:flex; gap:24px; flex-wrap:wrap; }
+.ticker-dot { display:inline-block; width:5px; height:5px; border-radius:50%;
+  background:var(--accent2); margin-right:5px; }
+
+/* ── HISTORY SIDEBAR + MAIN LAYOUT ── */
+.layout { max-width:1080px; margin:0 auto; padding:28px 28px 80px;
+  display:grid; grid-template-columns:220px 1fr; gap:24px; position:relative; z-index:1; }
+
+/* sidebar */
+.sidebar { position:sticky; top:100px; align-self:start; }
+.sidebar-title { font-family:var(--mono); font-size:9px; letter-spacing:.22em;
+  color:var(--accent); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+.sidebar-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+.history-list { display:flex; flex-direction:column; gap:2px; max-height:calc(100vh - 180px);
+  overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+.hist-item { padding:10px 12px; background:var(--card); border:1px solid var(--border);
+  cursor:pointer; transition:all .15s; border-left:3px solid transparent; }
+.hist-item:hover { border-left-color:var(--accent); background:rgba(0,212,255,.04); }
+.hist-item.active { border-left-color:var(--accent2); background:rgba(57,255,143,.05); }
+.hist-date { font-family:var(--mono); font-size:11px; color:var(--text); font-weight:600; }
+.hist-slot { font-family:var(--mono); font-size:10px; color:var(--muted); margin-top:2px; }
+.hist-clues { font-family:var(--mono); font-size:9px; color:var(--accent4); margin-top:3px; }
+.hist-empty { font-family:var(--mono); font-size:12px; color:var(--muted); padding:20px 12px;
+  text-align:center; border:1px dashed var(--border); }
+.hist-badge { display:inline-block; background:var(--accent2); color:#000; font-size:8px;
+  padding:1px 5px; font-weight:700; margin-left:6px; vertical-align:middle; }
+
+/* ── MAIN CONTENT ── */
+.main-content {}
+
+/* status */
+#status-bar { display:none; align-items:center; gap:12px; padding:12px 18px;
+  background:rgba(0,212,255,.04); border:1px solid rgba(0,212,255,.2);
+  margin-bottom:24px; font-family:var(--mono); font-size:12px; color:var(--accent); }
+#status-bar.on { display:flex; }
+.spin { width:15px; height:15px; border:2px solid rgba(0,212,255,.15);
+  border-top-color:var(--accent); border-radius:50%;
+  animation:sp .75s linear infinite; flex-shrink:0; }
+@keyframes sp{to{transform:rotate(360deg)}}
+#prog-wrap { flex:1; height:2px; background:rgba(0,212,255,.1); }
+#prog { height:100%; background:var(--accent); width:0%; transition:width .5s ease; }
+
+/* report header */
+#report-header { display:none; padding:16px 20px; background:var(--card);
+  border:1px solid var(--border); margin-bottom:20px; }
+#report-header.on { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+.rh-left {}
+.rh-time { font-family:var(--mono); font-size:11px; color:var(--accent); margin-bottom:4px; }
+.rh-meta { font-family:var(--mono); font-size:10px; color:var(--muted); }
+.rh-stats { display:flex; gap:16px; }
+.rh-stat { text-align:center; }
+.rh-stat-val { font-size:22px; font-weight:900; color:#fff; line-height:1; }
+.rh-stat-lbl { font-family:var(--mono); font-size:9px; color:var(--muted); margin-top:2px; }
+
+/* error */
+#err { display:none; padding:14px 18px; background:rgba(255,95,61,.05);
+  border:1px solid rgba(255,95,61,.25); border-left:3px solid var(--accent3);
+  color:var(--accent3); font-family:var(--mono); font-size:12px; margin-bottom:20px; }
+#err.on { display:block; }
+
+/* empty */
+#empty { text-align:center; padding:70px 24px; border:1px solid var(--border); background:var(--card); }
+.empty-icon { font-size:44px; margin-bottom:14px; opacity:.35; }
+.empty-title { font-size:20px; font-weight:700; color:#fff; margin-bottom:8px; }
+.empty-desc { font-size:13px; color:var(--muted); max-width:360px; margin:0 auto; line-height:1.7; }
+
+/* cards */
+#cards { display:flex; flex-direction:column; gap:14px; }
+.card { background:var(--card); border:1px solid var(--border); position:relative; overflow:hidden;
+  opacity:0; transform:translateY(12px); animation:cin .4s ease forwards;
+  transition:border-color .2s,box-shadow .2s; }
+.card:hover { border-color:rgba(0,212,255,.3); box-shadow:0 4px 28px rgba(0,212,255,.06); }
+.card::before { content:''; position:absolute; top:0; left:0; width:2px; height:100%;
+  background:linear-gradient(180deg,var(--accent) 0%,var(--accent2) 60%,transparent 100%); }
+.card::after { content:''; position:absolute; top:0; right:0; width:40px; height:40px;
+  background:linear-gradient(225deg,rgba(0,212,255,.07) 0%,transparent 60%); }
+@keyframes cin{to{opacity:1;transform:translateY(0)}}
+.card:nth-child(1){animation-delay:.03s} .card:nth-child(2){animation-delay:.07s}
+.card:nth-child(3){animation-delay:.11s} .card:nth-child(4){animation-delay:.15s}
+.card:nth-child(5){animation-delay:.19s} .card:nth-child(6){animation-delay:.23s}
+.card:nth-child(7){animation-delay:.27s} .card:nth-child(8){animation-delay:.31s}
+.card:nth-child(9){animation-delay:.35s} .card:nth-child(10){animation-delay:.39s}
+.card:nth-child(n+11){animation-delay:.43s}
+
+.card-head { display:flex; align-items:stretch; border-bottom:1px solid var(--border); }
+.card-num-box { display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:14px 16px; border-right:1px solid var(--border); background:rgba(0,212,255,.03); min-width:66px; }
+.card-num { font-size:34px; font-weight:900; line-height:1; color:rgba(0,212,255,.15); letter-spacing:-.03em; }
+.card-num-sub { font-family:var(--mono); font-size:8px; color:var(--muted); margin-top:3px; }
+.card-hc { flex:1; padding:14px 20px; display:flex; flex-direction:column; justify-content:center; gap:5px; }
+.card-tag { font-family:var(--mono); font-size:9px; color:var(--accent); letter-spacing:.22em;
+  display:flex; align-items:center; gap:8px; }
+.card-tag::after { content:''; flex:0 0 20px; height:1px; background:var(--accent); opacity:.5; }
+.card-title { font-size:16px; font-weight:700; color:#fff; line-height:1.4; letter-spacing:-.01em; }
+.card-body { padding:18px 20px 20px 20px; display:flex; flex-direction:column; gap:14px; }
+.sec { border-left:2px solid var(--border); padding-left:12px; transition:border-color .15s; }
+.sec:hover { border-left-color:var(--accent); }
+.sec-lbl { font-family:var(--mono); font-size:9px; letter-spacing:.2em; color:var(--accent2); margin-bottom:5px; }
+.sec-txt { font-size:13px; line-height:1.75; color:var(--text); }
+.sec-txt strong { color:var(--accent2); }
+.bullets { list-style:none; margin-top:3px; }
+.bullets li { font-size:13px; line-height:1.7; color:var(--text); padding-left:14px; position:relative; margin-bottom:4px; }
+.bullets li::before { content:'›'; position:absolute; left:0; color:var(--accent); font-weight:700; font-size:15px; line-height:1.5; }
+.bullets li strong { color:var(--accent2); }
+.code-block { background:#070d14; border:1px solid var(--border); border-left:2px solid var(--accent2);
+  padding:11px 14px; font-family:var(--mono); font-size:11.5px; color:#7ecf8e;
+  overflow-x:auto; margin-top:7px; white-space:pre-wrap; word-break:break-all; line-height:1.6; }
+
+/* loading skeleton */
+.skeleton { background:var(--card); border:1px solid var(--border); padding:20px; margin-bottom:14px; }
+.skel-line { height:12px; background:linear-gradient(90deg,var(--border) 25%,rgba(30,48,72,.5) 50%,var(--border) 75%);
+  background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:2px; margin-bottom:10px; }
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+footer { border-top:1px solid var(--border); background:var(--surface); text-align:center;
+  padding:20px; font-family:var(--mono); font-size:10px; color:var(--muted); letter-spacing:.1em; }
+footer em { color:var(--accent); font-style:normal; }
+
+@media(max-width:700px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{position:static}
+  .history-list{flex-direction:row; overflow-x:auto; overflow-y:hidden; flex-wrap:nowrap; max-height:none}
+  .hist-item{min-width:120px}
+  .ticker{display:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">
+    <div>
+      <div class="brand-eye">INTELLIGENCE TERMINAL</div>
+      <div class="brand-name">CTO 技术简报</div>
+      <div class="brand-sub" id="date-str">// 加载中...</div>
+    </div>
+    <div class="hdr-actions">
+      <button class="btn btn-ghost" onclick="loadHistory()" id="refresh-hist-btn">📋 刷新历史</button>
+      <button class="btn btn-primary" onclick="triggerGenerate()" id="gen-btn">
+        <span>⚡</span><span id="btn-txt">立即生成</span><span class="pulse"></span>
+      </button>
+    </div>
+  </div>
+  <div class="ticker">
+    <span class="ticker-lbl">LIVE</span>
+    <div class="ticker-items">
+      <span><span class="ticker-dot"></span>OSChina</span>
+      <span><span class="ticker-dot"></span>博客园</span>
+      <span><span class="ticker-dot"></span>掘金</span>
+      <span><span class="ticker-dot"></span>InfoQ</span>
+      <span><span class="ticker-dot"></span>SegmentFault</span>
+      <span><span class="ticker-dot"></span>腾讯云 · 阿里云</span>
+      <span><span class="ticker-dot"></span>每6小时自动更新 · 保留7天</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- 侧边栏：历史记录 -->
+  <aside class="sidebar">
+    <div class="sidebar-title">历史简报</div>
+    <div class="history-list" id="history-list">
+      <div class="hist-empty">加载中...</div>
+    </div>
+  </aside>
+
+  <!-- 主内容区 -->
+  <div class="main-content">
+    <div id="status-bar">
+      <div class="spin"></div>
+      <span id="status-txt">正在全网检索技术情报...</span>
+      <div id="prog-wrap"><div id="prog"></div></div>
+    </div>
+
+    <div id="report-header">
+      <div class="rh-left">
+        <div class="rh-time" id="rh-time">—</div>
+        <div class="rh-meta" id="rh-meta">—</div>
+      </div>
+      <div class="rh-stats">
+        <div class="rh-stat"><div class="rh-stat-val" id="sv1">—</div><div class="rh-stat-lbl">情报线索</div></div>
+        <div class="rh-stat"><div class="rh-stat-val" id="sv2">30</div><div class="rh-stat-lbl">精选动态</div></div>
+      </div>
+    </div>
+
+    <div id="err"></div>
+    <div id="cards">
+      <div id="empty">
+        <div class="empty-icon">📡</div>
+        <div class="empty-title">情报站待命中</div>
+        <div class="empty-desc">点击右上角「立即生成」触发本次抓取，或等待每6小时的自动更新。<br><br>历史简报可在左侧列表中切换查看。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer><em>CTO INTELLIGENCE TERMINAL</em> · GLM-4 驱动 · 每6小时更新 · 保留7天记录 · © 2025</footer>
+
+<script>
+document.getElementById('date-str').textContent =
+  '// ' + new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+
+let currentId = null;
+
+// ── 加载历史列表 ──────────────────────────────────────
+async function loadHistory() {
+  const listEl = document.getElementById('history-list');
+  try {
+    const resp = await fetch('/api/history');
+    const data = await resp.json();
+    if (!data.records || data.records.length === 0) {
+      listEl.innerHTML = '<div class="hist-empty">暂无记录<br>点击「立即生成」开始</div>';
+      return;
+    }
+    // 按日期分组
+    const groups = {};
+    data.records.forEach(r => {
+      if (!groups[r.date]) groups[r.date] = [];
+      groups[r.date].push(r);
+    });
+
+    let html = '';
+    Object.entries(groups).forEach(([date, items]) => {
+      html += `<div style="font-family:var(--mono);font-size:9px;color:var(--accent4);
+        padding:8px 12px 4px;letter-spacing:.1em">${date}</div>`;
+      items.forEach((r, i) => {
+        const isLatest = (html.indexOf('hist-item') === -1 && i === 0);
+        html += `<div class="hist-item${isLatest?' active':''}" onclick="loadReport('${r.id}')" id="hist-${r.id}">
+          <div class="hist-date">${r.slot} ${isLatest?'<span class="hist-badge">最新</span>':''}</div>
+          <div class="hist-clues">📦 ${r.total_clues} 条线索</div>
+        </div>`;
+        if (isLatest) currentId = r.id;
+      });
+    });
+    listEl.innerHTML = html;
+
+    // 自动加载最新
+    if (currentId) loadReport(currentId);
+  } catch(e) {
+    listEl.innerHTML = `<div class="hist-empty">加载失败<br>${e.message}</div>`;
+  }
+}
+
+// ── 加载某条简报 ──────────────────────────────────────
+async function loadReport(id) {
+  // 高亮侧边栏
+  document.querySelectorAll('.hist-item').forEach(el => el.classList.remove('active'));
+  const histEl = document.getElementById('hist-' + id);
+  if (histEl) histEl.classList.add('active');
+  currentId = id;
+
+  // 显示骨架屏
+  showSkeleton();
+
+  try {
+    const resp = await fetch(`/api/report/${id}`);
+    const data = await resp.json();
+    if (data.status !== 'success') throw new Error(data.msg);
+    renderRecord(data.record);
+  } catch(e) {
+    showError('加载失败：' + e.message);
+  }
+}
+
+// ── 手动触发生成 ──────────────────────────────────────
+async function triggerGenerate() {
+  const btn = document.getElementById('gen-btn');
+  const btxt = document.getElementById('btn-txt');
+  const sb = document.getElementById('status-bar');
+  const stxt = document.getElementById('status-txt');
+  const prog = document.getElementById('prog');
+
+  btn.disabled = true; btxt.textContent = '生成中...';
+  document.getElementById('err').classList.remove('on');
+  sb.classList.add('on');
+  document.getElementById('cards').innerHTML = '';
+  document.getElementById('report-header').classList.remove('on');
+
+  const stages = [
+    [10,'📡 正在连接 OSChina 开源情报源...'],
+    [22,'📡 正在抓取博客园深度技术文章...'],
+    [36,'📡 正在检索掘金生产实战库...'],
+    [50,'📡 正在拉取 InfoQ / SegmentFault...'],
+    [62,'📡 正在获取腾讯云 / 阿里云资讯...'],
+    [72,'🧠 GLM-4 第1批研判（1-15条）...'],
+    [86,'🧠 GLM-4 第2批研判（16-30条）...'],
+  ];
+  let si = 0;
+  const tmr = setInterval(() => {
+    if (si < stages.length) { prog.style.width = stages[si][0]+'%'; stxt.textContent = stages[si][1]; si++; }
+  }, 5000);
+
+  try {
+    const resp = await fetch('/generate-news');
+    clearInterval(tmr);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (data.status !== 'success') throw new Error(data.msg || '生成失败');
+
+    prog.style.width = '100%'; stxt.textContent = '✅ 简报生成完成！';
+    setTimeout(() => sb.classList.remove('on'), 1800);
+
+    // 刷新侧边栏历史
+    await loadHistory();
+    // 加载刚生成的
+    renderRecord({ ...data, display_time: data.display_time, total_clues: data.total_clues });
+
+  } catch(e) {
+    clearInterval(tmr); sb.classList.remove('on');
+    showError('请求失败：' + e.message);
+  } finally {
+    btn.disabled = false; btxt.textContent = '立即生成';
+  }
+}
+
+// ── 渲染报告 ──────────────────────────────────────────
+function renderRecord(record) {
+  // 更新 header
+  const rh = document.getElementById('report-header');
+  document.getElementById('rh-time').textContent = '📅 ' + record.display_time;
+  document.getElementById('rh-meta').textContent = '数据源：OSChina · 博客园 · 掘金 · InfoQ · SegmentFault · 腾讯云 · 阿里云';
+  document.getElementById('sv1').textContent = record.total_clues;
+  rh.classList.add('on');
+
+  const cardsEl = document.getElementById('cards');
+  cardsEl.innerHTML = '';
+  renderReport(record.report, cardsEl);
+}
+
+function renderReport(report, el) {
+  const secs = report.split(/(?=##\s*🚀)/g).filter(s => s.trim());
+  if (!secs.length) {
+    el.innerHTML = `<div class="card"><div class="card-body"><pre style="white-space:pre-wrap;font-family:var(--mono);font-size:12px;color:var(--text)">${x(report)}</pre></div></div>`;
+    return;
+  }
+  const lmap = {'背景与痛点':'背景与痛点','核心硬核更新':'核心更新','为什么你应该关注':'为何关注','零基础学习卡片':'学习卡片'};
+  secs.forEach((sec, i) => {
+    const card = document.createElement('div'); card.className = 'card';
+    const hm = sec.match(/##\s*🚀\s*(?:\[?\d+\/30\]?)?\s*(.*?)(?:\n|$)/);
+    const title = hm ? hm[1].trim() : `技术动态 ${i+1}`;
+    const subs = parseSecs(sec);
+    let sbody = '';
+    for (const [k, v] of Object.entries(subs)) {
+      const lbl = Object.entries(lmap).find(([mk]) => k.includes(mk));
+      sbody += `<div class="sec"><div class="sec-lbl">${lbl?lbl[1]:k}</div>${renderContent(v)}</div>`;
+    }
+    card.innerHTML = `
+      <div class="card-head">
+        <div class="card-num-box">
+          <div class="card-num">${String(i+1).padStart(2,'0')}</div>
+          <div class="card-num-sub">TODAY</div>
+        </div>
+        <div class="card-hc">
+          <div class="card-tag">技术动态</div>
+          <div class="card-title">${x(title)}</div>
+        </div>
+      </div>
+      <div class="card-body">${sbody}</div>`;
+    el.appendChild(card);
+  });
+}
+
+function parseSecs(text) {
+  const r = {};
+  [...text.matchAll(/###\s*[🔍🛠️💡📚]?\s*(.*?)\n([\s\S]*?)(?=###|$)/g)].forEach(m => {
+    const k=m[1].trim(),v=m[2].trim(); if(k&&v)r[k]=v;
+  });
+  return r;
+}
+
+function renderContent(text) {
+  let html = ''; const lines = text.split('\n');
+  let inCode=false,codeLines=[],bullets=[];
+  const flushB=()=>{
+    if(!bullets.length)return;
+    html+='<ul class="bullets">';
+    bullets.forEach(l=>html+=`<li>${fmt(l)}</li>`);
+    html+='</ul>'; bullets=[];
+  };
+  for(const line of lines){
+    if(line.trim().startsWith('```')){
+      if(!inCode){flushB();inCode=true;codeLines=[];}
+      else{html+=`<pre class="code-block">${x(codeLines.join('\n'))}</pre>`;inCode=false;codeLines=[];}
+      continue;
+    }
+    if(inCode){codeLines.push(line);continue;}
+    if(line.trim().startsWith('- ')||line.trim().startsWith('* ')){bullets.push(line.trim().slice(2));}
+    else if(line.trim()){flushB();html+=`<p class="sec-txt">${fmt(line)}</p>`;}
+  }
+  flushB(); return html;
+}
+
+function showSkeleton() {
+  const el = document.getElementById('cards');
+  el.innerHTML = Array(5).fill(0).map(()=>`
+    <div class="skeleton">
+      <div class="skel-line" style="width:40%;margin-bottom:14px"></div>
+      <div class="skel-line" style="width:90%"></div>
+      <div class="skel-line" style="width:80%"></div>
+      <div class="skel-line" style="width:60%"></div>
+    </div>`).join('');
+}
+
+function showError(msg) {
+  document.getElementById('cards').innerHTML = `<div id="empty">
+    <div class="empty-icon">🔌</div>
+    <div class="empty-title">加载失败</div>
+    <div class="empty-desc">${x(msg)}</div></div>`;
+}
+
+function fmt(t){
+  return x(t)
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/`([^`]+)`/g,'<code style="background:#0a1520;padding:1px 5px;color:#39ff8f;font-family:Courier New,monospace;font-size:11px;border:1px solid #1e3048">$1</code>');
+}
+function x(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ── 页面初始化 ────────────────────────────────────────
+(async function init() {
+  await loadHistory();
+  // 若没有任何历史，提示用户
+  const listEl = document.getElementById('history-list');
+  if (listEl.querySelector('.hist-empty')) {
+    document.getElementById('cards').innerHTML = `<div id="empty">
+      <div class="empty-icon">📡</div>
+      <div class="empty-title">暂无历史简报</div>
+      <div class="empty-desc">点击右上角「立即生成」，获取第一份技术简报。<br>之后将每6小时自动更新，数据保留7天。</div>
+    </div>`;
+  }
+})();
+</script>
+</body>
+</html>
