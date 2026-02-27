@@ -1,9 +1,3 @@
-下面是根据你当前项目结构与目标（AI 新闻采集 + GLM 分析 + FastAPI + 前端扩展）写的一份 **专业级 GitHub README.md**，适合直接放到仓库首页。
-
-你可以直接复制使用。
-
----
-
 # 🚀 AI Tech News Intelligence System
 
 > 一个基于 GLM 大模型的「CTO 级技术情报生成系统」
