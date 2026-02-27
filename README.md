@@ -242,3 +242,6 @@ MIT License
 * [ ] 支持企业私有部署
 * [ ] Web 可视化控制台
 
+
+迁移服务器：
+pip install -r requirements.txt
