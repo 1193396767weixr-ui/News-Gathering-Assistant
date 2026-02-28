@@ -89,7 +89,8 @@ nohup python scheduler.py > scheduler.log 2>&1 &
 ---
 
 成品展示页面：
-![Uploading image.png…]()
+<img width="1820" height="870" alt="image" src="https://github.com/user-attachments/assets/79553a99-4fde-4ba8-8a3c-e9a9a6be4568" />
+
 
 > 如果觉得项目有用，欢迎 Star ⭐ 支持！
 ```
